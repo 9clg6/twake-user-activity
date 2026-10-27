@@ -28,6 +28,19 @@ const tracker = (
   })
 
 describe('matomoTracker', () => {
+  it('ignores the properties of a hit', async () => {
+    const send = async (hit: Hit) => {
+      const { fetch, calls } = stubFetch(
+        json({ status: 'success', tracked: 1, invalid: 0, invalid_indices: [] })
+      )
+      await tracker(fetch).track([hit])
+      return calls[0]?.body
+    }
+    expect(await send(hit({ properties: { button: 'send' } }))).toEqual(
+      await send(hit())
+    )
+  })
+
   it('sends a batch as one authenticated bulk request', async () => {
     const { fetch, calls } = stubFetch(
       json({ status: 'success', tracked: 1, invalid: 0, invalid_indices: [] })

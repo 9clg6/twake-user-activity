@@ -25,7 +25,10 @@ export function toHit(activity: Activity, pepper: string): Hit {
     action: activity.action ?? DEFAULT_ACTION,
     ...(activity.org !== undefined && { tenant: activity.org }),
     ...(activity.platform !== undefined && { platform: activity.platform }),
-    ...(activity.ip !== undefined && { ip: activity.ip })
+    ...(activity.ip !== undefined && { ip: activity.ip }),
+    ...(activity.properties !== undefined && {
+      properties: activity.properties
+    })
   }
 }
 

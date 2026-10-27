@@ -54,6 +54,8 @@ export function posthogTracker(options: PostHogOptions): Tracker {
             distinct_id: hit.user,
             timestamp: hit.time.toISOString(),
             properties: {
+              // First, so the bridge's own keys win.
+              ...hit.properties,
               // Every request comes from the bridge, so without the app's
               // address the request IP says nothing about where the user is.
               ...(hit.ip === undefined

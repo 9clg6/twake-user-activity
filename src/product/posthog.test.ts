@@ -89,6 +89,26 @@ describe('posthogTracker', () => {
     ).rejects.toMatchObject({ name: 'ProductError', failure })
   })
 
+  it('adds the properties of the app, under the keys of the bridge', async () => {
+    const { fetch, calls } = stubFetch(json({ status: 1 }))
+    await tracker(fetch).track([
+      {
+        app: 'chat',
+        user: 'u',
+        time: new Date(0),
+        category: 'foreground',
+        action: 'button.clicked',
+        properties: { button: 'send', count: 3, app: 'other' }
+      }
+    ])
+    const [sent] = (calls[0]?.body as { batch: { properties: object }[] }).batch
+    expect(sent?.properties).toMatchObject({
+      button: 'send',
+      count: 3,
+      app: 'chat'
+    })
+  })
+
   it('sets paying as a person property on a subscription change', async () => {
     const { fetch, calls } = stubFetch(json({ status: 1 }))
     await tracker(fetch).track([

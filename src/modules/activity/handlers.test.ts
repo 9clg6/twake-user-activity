@@ -66,6 +66,36 @@ describe('activityHandler', () => {
     expect(hits[0]).toMatchObject({ ip: '203.0.113.7' })
   })
 
+  it('passes on the properties the app sent', async () => {
+    const { hits, handle } = handler()
+    const properties = { button: 'send', count: 3, ok: true, note: null }
+    await handle(event({ data: { properties } }))
+    expect(hits[0]).toMatchObject({ properties })
+  })
+
+  it.each([
+    ['a nested value', { a: { b: 1 } }],
+    ['an array', { a: [1] }],
+    ['a long string', { a: 'x'.repeat(201) }],
+    ['a number that is not finite', { a: Infinity }],
+    ['a key with a dash', { 'a-b': 1 }],
+    ['a key of PostHog', { $ip: '203.0.113.7' }],
+    ['a key too long', { ['a'.repeat(65)]: 1 }],
+    ['a key the bridge sets', { tenant: 'other' }],
+    [
+      'more than 50 keys',
+      Object.fromEntries(
+        Array.from({ length: 51 }, (_, i) => ['k' + String(i), i])
+      )
+    ]
+  ])('drops an event with properties holding %s', async (_name, properties) => {
+    const { hits, handle } = handler()
+    await expect(
+      handle(event({ data: { properties } }))
+    ).rejects.toBeInstanceOf(MalformedEventError)
+    expect(hits).toEqual([])
+  })
+
   it.each([
     ['no time', { time: undefined }],
     ['no actor', { twakeactor: undefined }],

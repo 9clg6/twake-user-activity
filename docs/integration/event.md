@@ -16,7 +16,8 @@ An app tells the bridge it saw a user by publishing one [CloudEvent 1.0](https:/
     "category": "foreground",
     "action": "share-by-link",
     "platform": "mobile",
-    "ip": "203.0.113.7"
+    "ip": "203.0.113.7",
+    "properties": { "button": "share", "view": "files", "count": 3 }
   }
 }
 ```
@@ -32,5 +33,6 @@ Required: `specversion`, `id`, `source`, `type`, `time` and `twakeactor`.
 - `data.action` is what the user did, such as `share-by-link`. Keep the list short and stable per app: each value becomes a row in the reports.
 - `data.platform` is `web`, `desktop` or `mobile`.
 - `data.ip` is the user's IP address, for per user location in the reports. Take it from the user's request, never your server's own address. Behind a proxy, use the client address your own proxy adds, and check the proxy's trusted addresses: one that trusts `X-Forwarded-For` from anywhere passes on whatever the client wrote.
+- `data.properties` says more about the action, such as which button or view, a duration or a count. It is a flat object of at most 50 keys. A key starts with a letter, then letters, digits and `_`, 64 characters at most. A value is a string of 200 characters at most, a finite number, a boolean or `null`. The keys `app`, `category`, `tenant` and `platform` belong to the bridge, and `$` keys to PostHog: an event that uses one is dropped, like one with any other invalid field. Only PostHog records properties; Matomo records the action alone. Send ids, enums and counts, never content or personal data: see [Data](../security/data.md).
 
 [Activity](../sources/activity.md) says what the bridge records from it, and [Failures](../architecture/failures.md) what happens to an event it cannot use.

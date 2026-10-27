@@ -18,6 +18,8 @@ Each hit is an event on the app's site, under the pseudonym as user id, at the h
 - The `tenant` and `platform` dimensions, when configured.
 - The user's IP address, when the app sent one. Matomo applies its IP anonymization setting to it.
 
+Matomo records the action alone: `data.properties` is for PostHog.
+
 A hit for an app with no site is refused and dead lettered.
 
 ## Reading the reports

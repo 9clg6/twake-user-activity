@@ -1,3 +1,7 @@
+export type Properties = Readonly<
+  Record<string, string | number | boolean | null>
+>
+
 /** One activity, in the platform's terms. Each backend maps it to its own model. */
 export interface Hit {
   app: string
@@ -10,6 +14,8 @@ export interface Hit {
   platform?: Platform
   /** The user's IP address as the app saw it, for the backend's geolocation. */
   ip?: string
+  /** What the app says about the action. Only PostHog records it. */
+  properties?: Properties
   /** Set on a subscription change: whether the user now pays. */
   paying?: boolean
 }
