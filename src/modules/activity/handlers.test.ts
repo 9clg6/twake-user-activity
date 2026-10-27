@@ -20,14 +20,16 @@ const event = (overrides: Record<string, unknown> = {}) => ({
 
 function handler() {
   const hits: Hit[] = []
+  const warnings: unknown[] = []
   const handle = activityHandler({
     pepper: PEPPER,
+    logger: { warn: (fields: unknown) => void warnings.push(fields) },
     track: hit => {
       hits.push(hit)
       return Promise.resolve()
     }
   })
-  return { hits, handle }
+  return { hits, handle, warnings }
 }
 
 describe('activityHandler', () => {
@@ -73,27 +75,67 @@ describe('activityHandler', () => {
     expect(hits[0]).toMatchObject({ properties })
   })
 
+  it('keeps the event and the valid properties, and logs the dropped keys', async () => {
+    const { hits, handle, warnings } = handler()
+    await handle(
+      event({
+        data: {
+          properties: {
+            good: 'ok',
+            nested: { b: 1 },
+            list: [1],
+            big: Infinity,
+            'a-b': 1,
+            $ip: '203.0.113.7',
+            tenant: 'other',
+            ['a'.repeat(65)]: 1,
+            long: 'x'.repeat(201)
+          }
+        }
+      })
+    )
+    expect(hits[0]).toMatchObject({
+      action: 'activity',
+      properties: { good: 'ok', long: 'x'.repeat(200) }
+    })
+    expect(Object.keys(hits[0]?.properties ?? {})).toEqual(['good', 'long'])
+    expect(warnings).toHaveLength(1)
+    expect(warnings[0]).toMatchObject({
+      id: '0192f0c2-0000-7000-8000-000000000001',
+      dropped: ['nested', 'list', 'big', 'a-b', '$ip', 'tenant', 'a'.repeat(65)]
+    })
+    expect(JSON.stringify(warnings)).not.toContain('203.0.113.7')
+  })
+
+  it('keeps the first 50 properties', async () => {
+    const { hits, handle, warnings } = handler()
+    const properties = Object.fromEntries(
+      Array.from({ length: 52 }, (_, i) => ['k' + String(i), i])
+    )
+    await handle(event({ data: { properties } }))
+    expect(Object.keys(hits[0]?.properties ?? {})).toHaveLength(50)
+    expect(hits[0]?.properties).toHaveProperty('k49')
+    expect(hits[0]?.properties).not.toHaveProperty('k50')
+    expect(warnings[0]).toMatchObject({ dropped: ['k50', 'k51'] })
+  })
+
   it.each([
-    ['a nested value', { a: { b: 1 } }],
-    ['an array', { a: [1] }],
-    ['a long string', { a: 'x'.repeat(201) }],
-    ['a number that is not finite', { a: Infinity }],
-    ['a key with a dash', { 'a-b': 1 }],
-    ['a key of PostHog', { $ip: '203.0.113.7' }],
-    ['a key too long', { ['a'.repeat(65)]: 1 }],
-    ['a key the bridge sets', { tenant: 'other' }],
-    [
-      'more than 50 keys',
-      Object.fromEntries(
-        Array.from({ length: 51 }, (_, i) => ['k' + String(i), i])
-      )
-    ]
-  ])('drops an event with properties holding %s', async (_name, properties) => {
-    const { hits, handle } = handler()
-    await expect(
-      handle(event({ data: { properties } }))
-    ).rejects.toBeInstanceOf(MalformedEventError)
-    expect(hits).toEqual([])
+    ['a string', 'x'],
+    ['an array', [1]],
+    ['null', null]
+  ])('keeps the event when properties is %s', async (_name, properties) => {
+    const { hits, handle, warnings } = handler()
+    await handle(event({ data: { properties } }))
+    expect(hits).toHaveLength(1)
+    expect(hits[0]).not.toHaveProperty('properties')
+    expect(warnings).toHaveLength(1)
+  })
+
+  it('does not log when there is nothing to drop', async () => {
+    const { handle, warnings } = handler()
+    await handle(event({ data: { properties: { a: 1 } } }))
+    await handle(event())
+    expect(warnings).toEqual([])
   })
 
   it.each([

@@ -43,6 +43,7 @@ const batcher = createBatcher({
 })
 const sources = configuredSources(config, {
   pepper: config.PSEUDONYM_PEPPER,
+  logger,
   track: hit => batcher.submit(hit),
   tracks: reportsOn(config.backend),
   // The user's hits waiting here go first, or they would outlive the erasure.

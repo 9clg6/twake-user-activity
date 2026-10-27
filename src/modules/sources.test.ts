@@ -15,6 +15,7 @@ function route() {
       },
       {
         pepper: 'a-pepper-that-is-at-least-32-characters',
+        logger: { warn: () => undefined },
         track: hit => {
           hits.push(hit)
           return Promise.resolve()
@@ -31,6 +32,7 @@ const changed = { internalEmail: 'alice@example.com', isPaying: true }
 
 const deps = {
   pepper: 'unused',
+  logger: { warn: () => undefined },
   track: () => Promise.resolve(),
   tracks: () => true,
   forget: () => Promise.resolve()

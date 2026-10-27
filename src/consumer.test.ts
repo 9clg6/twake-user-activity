@@ -81,6 +81,7 @@ async function start() {
     stats,
     configuredSources(config, {
       pepper: config.PSEUDONYM_PEPPER,
+      logger,
       track: hit => batcher.submit(hit),
       tracks: reportsOn(config.backend),
       forget: user => tracker.forget(user)

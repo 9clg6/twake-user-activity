@@ -1,4 +1,5 @@
 import type { RabbitMQMessageProperties } from '@linagora/rabbitmq-client'
+import type { Logger } from 'pino'
 import type { Config } from '../config.ts'
 import type { Hit } from '../product/port.ts'
 import { activitySource } from './activity/handlers.ts'
@@ -22,6 +23,7 @@ export interface Source {
 
 export interface SourceDeps {
   pepper: string
+  logger: Pick<Logger, 'warn'>
   track: (hit: Hit) => Promise<void>
   // Whether the backend reports on an app at all.
   tracks: (app: string) => boolean

@@ -43,13 +43,19 @@ export function activitySource(exchange: string, deps: SourceDeps): Source {
 }
 
 export function activityHandler(
-  deps: Pick<SourceDeps, 'pepper' | 'track'>
+  deps: Pick<SourceDeps, 'pepper' | 'track' | 'logger'>
 ): (body: unknown) => Promise<void> {
   return async body => {
     const envelope = parseCloudEvent(body)
     if (!envelope.ok) throw new MalformedEventError(envelope.error)
     const parsed = parseActivity(envelope.event)
     if (!parsed.ok) throw new MalformedEventError(parsed.error)
+    if (parsed.droppedProperties.length > 0) {
+      deps.logger.warn(
+        { id: envelope.event.id, dropped: parsed.droppedProperties },
+        'dropped properties of an activity'
+      )
+    }
     await deps.track(toHit(parsed.activity, deps.pepper))
   }
 }
