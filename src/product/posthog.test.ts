@@ -101,7 +101,9 @@ describe('posthogTracker', () => {
         paying: true
       }
     ])
-    const [sent] = ((calls[0]?.body ?? {}) as { batch: { properties: object }[] }).batch
+    const [sent] = (
+      (calls[0]?.body ?? {}) as { batch: { properties: object }[] }
+    ).batch
     expect(sent?.properties).toMatchObject({ $set: { paying: true } })
   })
 
