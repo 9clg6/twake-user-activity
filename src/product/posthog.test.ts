@@ -101,7 +101,9 @@ describe('posthogTracker', () => {
         properties: { button: 'send', count: 3, app: 'other' }
       }
     ])
-    const [sent] = (calls[0]?.body as { batch: { properties: object }[] }).batch
+    const [sent] = (
+      (calls[0]?.body ?? {}) as { batch: { properties: object }[] }
+    ).batch
     expect(sent?.properties).toMatchObject({
       button: 'send',
       count: 3,
