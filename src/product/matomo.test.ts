@@ -51,7 +51,7 @@ describe('matomoTracker', () => {
     expect(calls).toHaveLength(1)
     const [call] = calls
     expect(call?.url).toBe('https://matomo.example.com/analytics/matomo.php')
-    const { requests, token_auth } = call?.body as {
+    const { requests, token_auth } = (call?.body ?? {}) as {
       requests: string[]
       token_auth: string
     }
@@ -76,7 +76,8 @@ describe('matomoTracker', () => {
       json({ status: 'success', invalid_indices: [] })
     )
     await tracker(fetch).track([hit({ ip: '203.0.113.7' })])
-    const [request] = (calls[0]?.body as { requests: string[] }).requests
+    const [request] = ((calls[0]?.body ?? {}) as { requests: string[] })
+      .requests
     expect(new URLSearchParams(request).get('cip')).toBe('203.0.113.7')
   })
 
@@ -85,7 +86,8 @@ describe('matomoTracker', () => {
       json({ status: 'success', invalid_indices: [] })
     )
     await tracker(fetch, { platform: 2 }).track([hit()])
-    const [request] = (calls[0]?.body as { requests: string[] }).requests
+    const [request] = ((calls[0]?.body ?? {}) as { requests: string[] })
+      .requests
     const params = new URLSearchParams(request)
     expect(params.has('dimension1')).toBe(false)
     expect(params.get('dimension2')).toBe('mobile')
@@ -100,7 +102,9 @@ describe('matomoTracker', () => {
       hit({ app: 'chat' })
     ])
     expect(result.refused).toEqual(new Set([0]))
-    expect((calls[0]?.body as { requests: string[] }).requests).toHaveLength(1)
+    expect(
+      ((calls[0]?.body ?? {}) as { requests: string[] }).requests
+    ).toHaveLength(1)
   })
 
   it('maps the indices Matomo refused back to the batch', async () => {
