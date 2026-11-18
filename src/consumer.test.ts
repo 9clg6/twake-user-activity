@@ -140,10 +140,19 @@ describe('consumer', () => {
 
   it('drops a malformed event and keeps consuming', async () => {
     const { tracker, stats, publish } = await start()
-    await publish(event('mail', { twakeactor: undefined }))
+    await publish(event('mail', { twakeactor: 'not-an-address' }))
     await publish(event('mail'))
     await until(() => tracker.hits.length === 1)
     expect(stats.outcomes.get('dropped')).toBe(1)
+  })
+
+  it('consumes an activity without actor as an anonymous hit', async () => {
+    const { tracker, stats, publish } = await start()
+    await publish(event('mail', { twakeactor: undefined }))
+    await until(() => tracker.hits.length === 1)
+    expect(tracker.hits[0]).toMatchObject({ app: 'mail', action: 'activity' })
+    expect(tracker.hits[0]).not.toHaveProperty('user')
+    expect(stats.outcomes.get('dropped')).toBeUndefined()
   })
 
   it('dead letters what the backend refuses and keeps consuming', async () => {
