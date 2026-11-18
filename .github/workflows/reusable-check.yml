@@ -31,7 +31,10 @@ jobs:
       - run: npm ci --no-fund
       # Moderate advisories pass until @sentry/node depends on glob 14.0.2 or later
       # (getsentry/sentry-javascript#25981): back to a plain npm audit then
-      - run: npm audit --audit-level=high
+      # High advisories only on what ships: picomatch (GHSA-fc5q-39xc-vjpf) has no
+      # patched release and comes through vitest and vite alone: back to
+      # `--omit=dev` removal once a fixed picomatch exists
+      - run: npm audit --omit=dev --audit-level=high
       - run: npm run check
         env:
           # The job context is only readable from steps.
