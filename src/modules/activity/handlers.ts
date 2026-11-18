@@ -19,7 +19,9 @@ export function pseudonym(email: string, pepper: string): string {
 export function toHit(activity: Activity, pepper: string): Hit {
   return {
     app: activity.app,
-    user: pseudonym(activity.email, pepper),
+    ...(activity.email !== undefined && {
+      user: pseudonym(activity.email, pepper)
+    }),
     time: activity.time,
     category: activity.category ?? UNCLASSIFIED,
     action: activity.action ?? DEFAULT_ACTION,

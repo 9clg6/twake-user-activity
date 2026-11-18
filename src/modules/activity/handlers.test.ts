@@ -140,7 +140,7 @@ describe('activityHandler', () => {
 
   it.each([
     ['no time', { time: undefined }],
-    ['no actor', { twakeactor: undefined }],
+    ['an actor that is not an address', { twakeactor: 'not-an-address' }],
     ['another event type', { type: 'com.twake.mail.user.created.v1' }],
     ['an unknown category', { data: { category: 'idle' } }],
     ['an unknown platform', { data: { platform: 'tv' } }],
@@ -153,6 +153,52 @@ describe('activityHandler', () => {
       MalformedEventError
     )
     expect(hits).toEqual([])
+  })
+})
+
+describe('an activity without actor', () => {
+  const anonymous = (overrides: Record<string, unknown> = {}) =>
+    event({
+      type: 'com.twake.chat.user.active.v1',
+      twakeactor: undefined,
+      twakeactorid: undefined,
+      twakeorg: undefined,
+      ...overrides
+    })
+
+  it('is accepted as a hit with no user and no tenant', async () => {
+    const { hits, handle } = handler()
+    await handle(
+      anonymous({
+        data: {
+          category: 'foreground',
+          action: 'button.clicked',
+          platform: 'web',
+          properties: { roomId: '!r:example.com' }
+        }
+      })
+    )
+    expect(hits).toEqual([
+      {
+        app: 'chat',
+        time: new Date('2026-10-24T10:30:00Z'),
+        category: 'foreground',
+        action: 'button.clicked',
+        platform: 'web',
+        properties: { roomId: '!r:example.com' }
+      }
+    ])
+    expect(hits[0]).not.toHaveProperty('user')
+    expect(hits[0]).not.toHaveProperty('tenant')
+  })
+
+  it('still fills the category and action', async () => {
+    const { hits, handle } = handler()
+    await handle(anonymous({ data: undefined }))
+    expect(hits[0]).toMatchObject({
+      category: 'unclassified',
+      action: 'activity'
+    })
   })
 })
 

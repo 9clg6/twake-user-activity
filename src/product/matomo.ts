@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto'
 import { z } from 'zod'
 import { endpoint, postForm, postJson } from './http.ts'
 import { ProductError, type CallStats, type Hit, type Tracker } from './port.ts'
@@ -48,7 +49,6 @@ export function trackingQuery(
     rec: '1',
     apiv: '1',
     send_image: '0',
-    uid: hit.user,
     cdt: String(Math.floor(hit.time.getTime() / 1000)),
     e_c: hit.category,
     e_a: hit.action,
@@ -56,6 +56,9 @@ export function trackingQuery(
     // fetch's default "node" does.
     ua: USER_AGENT
   })
+  // Anonymous: a random visitor id per hit, and no user id.
+  if (hit.user === undefined) params.set('_id', randomBytes(8).toString('hex'))
+  else params.set('uid', hit.user)
   // Only a token with write access may override the visitor's address.
   if (hit.ip !== undefined) params.set('cip', hit.ip)
   for (const field of ['tenant', 'platform'] as const) {

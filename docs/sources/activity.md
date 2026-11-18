@@ -5,11 +5,11 @@ Apps publish a CloudEvent `com.twake.<app>.user.active.v1` on `user-activity` wh
 The hit takes:
 
 - the app from the type,
-- the pseudonym of `twakeactor`,
+- the pseudonym of `twakeactor` (none without it: the activity is anonymous),
 - the event's `time`, not the time the bridge received it,
 - the category from `data.category`: `foreground`, `background`, or `unclassified` when absent,
 - the action from `data.action`, `activity` when absent,
 - the platform, IP address and properties from `data`,
-- the tenant from `twakeorg`.
+- the tenant from `twakeorg`, only with a `twakeactor`.
 
 An event that is not valid is logged and dropped. An app cannot publish as `billing`: the name is reserved for [paying users](paying-users.md).

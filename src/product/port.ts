@@ -5,8 +5,8 @@ export type Properties = Readonly<
 /** One activity, in the platform's terms. Each backend maps it to its own model. */
 export interface Hit {
   app: string
-  /** The pseudonymous user id, never an address. */
-  user: string
+  /** The pseudonymous user id, never an address. Absent: anonymous. */
+  user?: string
   time: Date
   category: string
   action: string

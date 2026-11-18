@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { endpoint, postJson } from './http.ts'
 import { ProductError, type CallStats, type Tracker } from './port.ts'
 
@@ -51,7 +52,7 @@ export function posthogTracker(options: PostHogOptions): Tracker {
           api_key: options.apiKey,
           batch: hits.map(hit => ({
             event: hit.action,
-            distinct_id: hit.user,
+            distinct_id: hit.user ?? randomUUID(),
             timestamp: hit.time.toISOString(),
             properties: {
               // First, so the bridge's own keys win.
@@ -65,13 +66,19 @@ export function posthogTracker(options: PostHogOptions): Tracker {
               category: hit.category,
               // The group too, so group analytics counts organizations, not
               // only people.
-              ...(hit.tenant !== undefined && {
-                tenant: hit.tenant,
-                $groups: { organization: hit.tenant }
+              // Anonymous: no person profile, so nothing links the hits.
+              ...(hit.user === undefined && {
+                $process_person_profile: false
               }),
+              ...(hit.user !== undefined &&
+                hit.tenant !== undefined && {
+                  tenant: hit.tenant,
+                  $groups: { organization: hit.tenant }
+                }),
               ...(hit.platform !== undefined && { platform: hit.platform }),
               // A person property, so insights can count paying users.
-              ...(hit.paying !== undefined && { $set: { paying: hit.paying } })
+              ...(hit.user !== undefined &&
+                hit.paying !== undefined && { $set: { paying: hit.paying } })
             }
           }))
         },

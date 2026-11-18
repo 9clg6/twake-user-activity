@@ -195,4 +195,19 @@ describe('matomoTracker.forget', () => {
       failure
     })
   })
+
+  it('tracks an anonymous hit under a random visitor id, with no user id', async () => {
+    const { fetch, calls } = stubFetch(
+      json({ status: 'success', tracked: 2, invalid: 0, invalid_indices: [] })
+    )
+    const { user: _user, ...anonymous } = hit()
+    await tracker(fetch).track([anonymous, anonymous])
+    const body = calls[0]?.body as { requests: string[] }
+    const [a, b] = body.requests.map(r => new URLSearchParams(r))
+    expect(a?.has('uid')).toBe(false)
+    expect(a?.get('_id')).toMatch(/^[0-9a-f]{16}$/)
+    expect(b?.get('_id')).toMatch(/^[0-9a-f]{16}$/)
+    expect(a?.get('_id')).not.toBe(b?.get('_id'))
+    expect(a?.get('e_a')).toBe('email.read')
+  })
 })

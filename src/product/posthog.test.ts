@@ -153,4 +153,63 @@ describe('posthogTracker', () => {
       }
     ])
   })
+
+  describe('an anonymous hit', () => {
+    const anonymousHit = {
+      app: 'chat',
+      time: new Date('2026-10-24T10:30:00Z'),
+      category: 'foreground',
+      action: 'button.clicked',
+      platform: 'web' as const,
+      properties: { button: 'send' }
+    }
+    const sendTwice = async () => {
+      const { fetch, calls } = stubFetch(json({ status: 1 }))
+      await tracker(fetch).track([anonymousHit, anonymousHit])
+      return (
+        (calls[0]?.body ?? {}) as {
+          batch: {
+            distinct_id: string
+            properties: Record<string, unknown>
+          }[]
+        }
+      ).batch
+    }
+
+    it('gets a random UUID as distinct id, never the same twice', async () => {
+      const [a, b] = await sendTwice()
+      const uuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+      expect(a?.distinct_id).toMatch(uuid)
+      expect(b?.distinct_id).toMatch(uuid)
+      expect(a?.distinct_id).not.toBe(b?.distinct_id)
+    })
+
+    it('creates no person, no group, no person property', async () => {
+      const [a] = await sendTwice()
+      expect(a?.properties).toMatchObject({
+        $process_person_profile: false,
+        $geoip_disable: true,
+        app: 'chat',
+        category: 'foreground',
+        platform: 'web',
+        button: 'send'
+      })
+      expect(a?.properties).not.toHaveProperty('$groups')
+      expect(a?.properties).not.toHaveProperty('tenant')
+      expect(a?.properties).not.toHaveProperty('$set')
+    })
+
+    it('leaves the events with a user as they are', async () => {
+      const { fetch, calls } = stubFetch(json({ status: 1 }))
+      await tracker(fetch).track([{ ...anonymousHit, user: 'u' }])
+      const [sent] = (
+        (calls[0]?.body ?? {}) as {
+          batch: { distinct_id: string; properties: object }[]
+        }
+      ).batch
+      expect(sent?.distinct_id).toBe('u')
+      expect(sent?.properties).not.toHaveProperty('$process_person_profile')
+    })
+  })
 })

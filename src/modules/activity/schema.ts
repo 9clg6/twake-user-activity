@@ -52,7 +52,7 @@ function cleanProperties(raw: unknown): {
 const activity = z.object({
   type: z.string().regex(TYPE_PATTERN),
   time: z.iso.datetime({ offset: true }),
-  twakeactor: z.email(),
+  twakeactor: z.email().optional(),
   twakeactorid: z.string().optional(),
   twakeorg: z.string().optional(),
   data: z
@@ -68,7 +68,8 @@ const activity = z.object({
 
 export interface Activity {
   app: string
-  email: string
+  /** Absent when anonymous: then there is no org either. */
+  email?: string
   time: Date
   category?: 'background' | 'foreground'
   action?: string
@@ -102,14 +103,16 @@ export function parseActivity(event: CloudEvent): ActivityResult {
     droppedProperties: dropped,
     activity: {
       app: app.data,
-      email: twakeactor,
       time: new Date(time),
       ...(data.category !== undefined && { category: data.category }),
       ...(data.action !== undefined && { action: data.action }),
       ...(data.platform !== undefined && { platform: data.platform }),
       ...(data.ip !== undefined && { ip: data.ip }),
       ...(Object.keys(properties).length > 0 && { properties }),
-      ...(twakeorg !== undefined && { org: twakeorg })
+      ...(twakeactor !== undefined && { email: twakeactor }),
+      // Anonymous means anonymous: the org goes with the actor.
+      ...(twakeactor !== undefined &&
+        twakeorg !== undefined && { org: twakeorg })
     }
   }
 }

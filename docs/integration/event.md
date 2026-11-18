@@ -22,11 +22,11 @@ An app tells the bridge it saw a user by publishing one [CloudEvent 1.0](https:/
 }
 ```
 
-Required: `specversion`, `id`, `source`, `type`, `time` and `twakeactor`.
+Required: `specversion`, `id`, `source`, `type`, `time`.
 
 - `type` names the app: `com.twake.<app>.user.active.v1`, where `<app>` is lowercase letters, digits and dashes.
 - `time` is when the user acted, with a timezone. The bridge records this time, not the time it received the event.
-- `twakeactor` is the user's address. It never leaves the bridge.
+- `twakeactor` is the user's address. It never leaves the bridge. Leave it out for an anonymous event: the bridge then records the action with no user, and ignores `twakeactorid` and `twakeorg` too. When present it must be an address.
 - `twakeactorid` is the user's LDAP `entryUUID`, when the app has it.
 - `twakeorg` is the tenant: the organization's LDAP id, the one ldap-rest and the Twake Space events use, not its domain. B2C users share one mail domain, so a domain cannot tell tenants apart. Leave it out for a user with no organization.
 - `data.category` is `foreground` when the user is looking at the app, `background` otherwise.

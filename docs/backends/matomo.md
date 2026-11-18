@@ -13,6 +13,8 @@
 
 Each hit is an event on the app's site, under the pseudonym as user id, at the hit's time.
 
+An anonymous hit (no user) has no user id and a random visitor id per hit, so each is its own visit.
+
 - Event category: the hit's category, such as `foreground`.
 - Event action: the hit's action, such as `share-by-link` or `task.assigned`.
 - The `tenant` and `platform` dimensions, when configured.
